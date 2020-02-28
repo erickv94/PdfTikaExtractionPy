@@ -44,117 +44,137 @@ def extract_second_format(data,file_path,count):
             print(attribute,ssn,email,address,name)
 
     return count
-def extract_first_format(data):
-    #get personal data
-        name=data[0]
-        if("PHONE" in data):
-            phone_index=data.index("PHONE")+1
-            phone=data[phone_index]
-        else:
-            phone="Phone not Avaible"
+def extract_first_format(data,file_path):
+        #get personal data
+    name_to_split=file_path.split('.pdf')[0]
+    name_to_split=name_to_split.split('/')[1].split('-application')[0]
+    separator=" "
+    #return [name, phone,email,address,ssn,birth,speciality,travel_experience]
 
-        if("EMAIL" in data):
-            email_index=data.index("EMAIL")+1
-            email=data[email_index]
-        else:
-            email="Email not Avaible"
+    name=separator.join(name_to_split.split('-')) #full name get it
 
-        if("ADDRESS" in data):
-            address_start_index=data.index("ADDRESS")+1
-            address_end_index=data.index("SSN")
-            address=" ".join(data[address_start_index:address_end_index])
-        else:
-            address="Address not Avaible"
+ #references index
+    reference_index=data.index("REFERENCES")
+    # exp_index=data.index("EXPERIENCE")
+    # start_index=data.index("AVAILABLE TO START")
+    # speciality_index= data.index("SPECIALITY")
 
-        if("SSN" in data):
-            ssn_index= data.index("SSN")+1
-            ssn=data[ssn_index]
-            if(ssn == "DATE OF BIRTH"):
-                ssn="SSN not Avaible"
-        else:
-            ssn="SSN not Avaible"
-            
-        if("DATE OF BIRTH" in data):
-            birth_index=data.index("DATE OF BIRTH")+1
-            birth=data[birth_index]
-            if(birth == "HIGHLIGHTS"):
-                birth="Date not Avaible"
-        else:
-            birth="Date not Avaible"
-
-        if("SPECIALTY" in data):
-            speciality_start_index=data.index("SPECIALTY")+1
-
-            if("TRAVEL EXPERIENCE" in data):
-                speciality_end_index=data.index("TRAVEL EXPERIENCE")
-            elif("LICENSES" in data):
-                speciality_end_index=data.index("LICENSES")
-            
-
-            
-            speciality=" ".join(data[speciality_start_index:speciality_end_index])
-        else:
-            speciality="Specialty not Avaible"
+    phone=None
+    email=None
+    address=None
+    ssn=None
+    birth=None
+    speciality=None
+    travel_experience=None
+    for index,attribute in enumerate(data):
+        if re.search('\\(\\d{3}\\)\\s\\d{3}-\\d{4}',attribute) and index <=reference_index :
+            phone=attribute
+        if re.search('^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$',attribute) and index<= reference_index:
+            email=attribute
+            print(email,name)
         
-        if("TRAVEL EXPERIENCE" in data):
-            travel_experience=True
-        else:
-            travel_experience=False
-        name=data[0]
-        if("PHONE" in data):
-            phone_index=data.index("PHONE")+1
-            phone=data[phone_index]
-        else:
-            phone="Phone not Avaible"
+        # if("EMAIL" in data):
+        #     email_index=data.index("EMAIL")+1
+        #     email=data[email_index]
+        # else:
+        #     email="Email not Avaible"
 
-        if("EMAIL" in data):
-            email_index=data.index("EMAIL")+1
-            email=data[email_index]
-        else:
-            email="Email not Avaible"
+        # if("ADDRESS" in data):
+        #     address_start_index=data.index("ADDRESS")+1
+        #     address_end_index=data.index("SSN")
+        #     address=" ".join(data[address_start_index:address_end_index])
+        # else:
+        #     address="Address not Avaible"
 
-        if("ADDRESS" in data):
-            address_start_index=data.index("ADDRESS")+1
-            address_end_index=data.index("SSN")
-            address=" ".join(data[address_start_index:address_end_index])
-        else:
-            address="Address not Avaible"
-
-        if("SSN" in data):
-            ssn_index= data.index("SSN")+1
-            ssn=data[ssn_index]
-            if(ssn == "DATE OF BIRTH"):
-                ssn="SSN not Avaible"
-        else:
-            ssn="SSN not Avaible"
+        # if("SSN" in data):
+        #     ssn_index= data.index("SSN")+1
+        #     ssn=data[ssn_index]
+        #     if(ssn == "DATE OF BIRTH"):
+        #         ssn="SSN not Avaible"
+        # else:
+        #     ssn="SSN not Avaible"
             
-        if("DATE OF BIRTH" in data):
-            birth_index=data.index("DATE OF BIRTH")+1
-            birth=data[birth_index]
-            if(birth == "HIGHLIGHTS"):
-                birth="Date not Avaible"
-        else:
-            birth="Date not Avaible"
+        # if("DATE OF BIRTH" in data):
+        #     birth_index=data.index("DATE OF BIRTH")+1
+        #     birth=data[birth_index]
+        #     if(birth == "HIGHLIGHTS"):
+        #         birth="Date not Avaible"
+        # else:
+        #     birth="Date not Avaible"
 
-        if("SPECIALTY" in data):
-            speciality_start_index=data.index("SPECIALTY")+1
+        # if("SPECIALTY" in data):
+        #     speciality_start_index=data.index("SPECIALTY")+1
 
-            if("TRAVEL EXPERIENCE" in data):
-                speciality_end_index=data.index("TRAVEL EXPERIENCE")
-            elif("LICENSES" in data):
-                speciality_end_index=data.index("LICENSES")
+        #     if("TRAVEL EXPERIENCE" in data):
+        #         speciality_end_index=data.index("TRAVEL EXPERIENCE")
+        #     elif("LICENSES" in data):
+        #         speciality_end_index=data.index("LICENSES")
             
 
             
-            speciality=" ".join(data[speciality_start_index:speciality_end_index])
-        else:
-            speciality="Specialty not Avaible"
+        #     speciality=" ".join(data[speciality_start_index:speciality_end_index])
+        # else:
+        #     speciality="Specialty not Avaible"
         
-        if("TRAVEL EXPERIENCE" in data):
-            travel_experience=True
-        else:
-            travel_experience=False
-        return [name, phone,email,address,ssn,birth,speciality,travel_experience]
+        # if("TRAVEL EXPERIENCE" in data):
+        #     travel_experience=True
+        # else:
+        #     travel_experience=False
+        # name=data[0]
+        # if("PHONE" in data):
+        #     phone_index=data.index("PHONE")+1
+        #     phone=data[phone_index]
+        # else:
+        #     phone="Phone not Avaible"
+
+        # if("EMAIL" in data):
+        #     email_index=data.index("EMAIL")+1
+        #     email=data[email_index]
+        # else:
+        #     email="Email not Avaible"
+
+        # if("ADDRESS" in data):
+        #     address_start_index=data.index("ADDRESS")+1
+        #     address_end_index=data.index("SSN")
+        #     address=" ".join(data[address_start_index:address_end_index])
+        # else:
+        #     address="Address not Avaible"
+
+        # if("SSN" in data):
+        #     ssn_index= data.index("SSN")+1
+        #     ssn=data[ssn_index]
+        #     if(ssn == "DATE OF BIRTH"):
+        #         ssn="SSN not Avaible"
+        # else:
+        #     ssn="SSN not Avaible"
+            
+        # if("DATE OF BIRTH" in data):
+        #     birth_index=data.index("DATE OF BIRTH")+1
+        #     birth=data[birth_index]
+        #     if(birth == "HIGHLIGHTS"):
+        #         birth="Date not Avaible"
+        # else:
+        #     birth="Date not Avaible"
+
+        # if("SPECIALTY" in data):
+        #     speciality_start_index=data.index("SPECIALTY")+1
+
+        #     if("TRAVEL EXPERIENCE" in data):
+        #         speciality_end_index=data.index("TRAVEL EXPERIENCE")
+        #     elif("LICENSES" in data):
+        #         speciality_end_index=data.index("LICENSES")
+            
+
+            
+        #     speciality=" ".join(data[speciality_start_index:speciality_end_index])
+        # else:
+        #     speciality="Specialty not Avaible"
+        
+        # if("TRAVEL EXPERIENCE" in data):
+        #     travel_experience=True
+        # else:
+        #     travel_experience=False
+    return [name, phone,email,address,ssn,birth,speciality,travel_experience]
 
 
 #in case at least one pdf exists, the csv timestamp name will be created 
@@ -181,14 +201,11 @@ for file_path in file_list:
     #here the data will be filter avoiding empty strings
     data= list(filter(None,raw_lines))
     if is_first_cvtype(data):
-        print("primer tipo")
-        row=extract_first_format(data)
-        print(row)
-        print(data)
+        row=extract_first_format(data,file_path)
     else:
         #print(data)
         #count=extract_second_format(data,file_path,count)
-        print("otro")
+        print("otro tipo")
 
         
     
