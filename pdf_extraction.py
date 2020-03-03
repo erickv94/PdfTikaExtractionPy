@@ -60,7 +60,6 @@ def extract_first_format(data,file_path):
     name_to_split=file_path.split('.pdf')[0]
     name_to_split=name_to_split.split('/')[1].split('-application')[0]
     separator=" "
-    #return [name, phone,email,address,ssn,birth,speciality,travel_experience]
 
     name=separator.join(name_to_split.split('-')) #full name get it
 
@@ -115,7 +114,113 @@ def extract_first_format(data,file_path):
 
     return [name, phone,email,address,ssn,birth,speciality,travel_experience]
 
+def get_specialities(text):
 
+    # the dictionary bellow has all the possible matches of specialty text
+    # some anotations bellow
+    # cbr: could be replaced
+    specialities_availables={
+        'emergency department': 'ER | Emergency Room',#cbr
+        'hospital administration': 'ADM | Hospital Administration', #cbr
+        'cardiovasculta intensive care':'CVICU | Cardiovascular Intensive Care Unit', #cbr
+        'nicu': 'NICU | Neonatal Intensive Care Unit',
+        'med surg':'MedSurg | Medical/SurgicalICU',
+        'intensive care unit': 'ICU | Intensive Care Unit',
+        'registered nurse':'RN | Registered Nurse',
+        'charge nurse': 'CHRG | Charge Nurse',
+        'small town':'ER-Critical Access | Small Town ER (Rural ER)',
+        'cma':'CMA | Certified Medical Assistant',
+        'cna':'CNA | Certified Nursing Assistant',
+        'dialysis':'DIA | Dialysis',
+        'skilled': 'SKL | Skilled Nursing',
+        'long term care': 'LTC | Long Term Care',
+        'nights':'Nights |',
+        'psychiatric':'PSYCH | Psychiatric Unit Nurse',
+        'floating':'FLOAT | Floating',
+        'rehabilitation': 'RHB | Inpatient Rehab',
+        'progressive care':'PCU | Progressive Care Unit',
+        'home health':'HH | Home Health',
+        'orthopedics':'ORTHO | Orthopedic Unit',
+        'pacu':'PACU | Post Anesthesia Care Unit',
+        'telemetry':'TELE | Telemetry',
+        'technical specialist':'TECH | Technical Specialist',
+        'flight nurse':'FLIGHT | Flight Nurse',
+        'obstetrics':'OB | Obstetrics',
+        'minimum data set':'MDS | Minimum Data Set',
+        'picu':'PICU | Pediatric ICU',
+        'pediatricmid':'PED | PediatricMID',
+        'midwife':'MID | Nurse-Midwife ',
+        'nurse anesthetist':'CRNA | Certified Registered Nurse Anesthetist',
+        'lpn':'LPN | Licensed Practical Nurse',
+        'flu':'FLU/Wellness Clinic | Flu',
+        'step down unit':'STPDN | Step Down Unit',
+        'dialysis licensed practical nurse':'CDLPN | Certified Dialysis Licensed Practical Nurse',
+        'manager':'MGR | Manager',
+        'nurse practitioner': 'NP | Nurse Practitioner',
+        'oncology':'ONC | Oncology',
+        'respiratory therapist': 'RRT | Registered Respiratory Therapist',
+        'pre-operation':'PREOP | Pre-Operation',
+        'labor and delivery':'L&D | Labor & Delivery',
+        'electronic intensive care':'eICU | Electronic Intensive Care Unit',
+        'surgical intensive care':'SICU | Surgical intensive care unit',
+        'catheter laboratory':"CATH | Catheter Laboratory RN",
+        'occupational health':'OCC | Occupational Health',
+        'phd':'Phd |',
+        'office clerk':'CLRK | Office Clerk',
+        'medical unit':'MDAS | Medical Assistant',
+        'certified medical-surgical':'CMSRN | Certified Medical-Surgical Registered Nurse',
+        'med lab tech':'MLT | Med Lab Tech',
+        'per diem':'PD | Per Diem',
+        'wound care':'CWCN | Wound Care',
+        'outpatient infusion':'INF | Outpatient Infusion',
+        'ambulatory care':'RNBC | Ambulatory Care Nursing',
+        'allied':'AL | Allied',
+        'perfusionist':'CCP | Certified Cardiovascular Perfusionist',
+        'phlebotomist':'Phlebo | Phlebotomist',
+        'trauma':'TCRN | Trauma Certified Registered Nurse',
+        'sterile processing tech':'SPT | Sterile Processing Tech'
+    }
+    speciality_list=[]
+    
+    if not text:
+        return []
+
+    for speciality in specialities_availables.keys():
+        if speciality in text.lower():
+            speciality_list.append(specialities_availables[speciality])
+
+    if not speciality_list:
+        speciality_list.append('Other')
+
+    return speciality_list
+
+def get_experience_years(text):
+    start_indexes=[]
+    end_indexes=[]
+    years_list=[]
+
+    if not text:
+        return None
+
+    for match in re.finditer('\(',text):
+        start_indexes.append(match.start()+1)
+
+    for match in re.finditer(' years\)',text):
+        end_indexes.append(match.start())
+
+    for index in range(len(start_indexes)):
+        years=text[start_indexes[index]:end_indexes[index]]
+        years= float(years)
+        years_list.append(years)
+        
+    return sum(years_list)
+
+def get_fulladdress(text):
+    if not text:
+        return None
+
+    full_address=text.split(',')[0]
+    return full_address
 #in case at least one pdf exists, the csv timestamp name will be created 
 if(file_list):
     file_csv_name=datetime.datetime.now().strftime('nursefly-%Y-%m-%d-%H-%M-%S.csv')
@@ -142,15 +247,23 @@ for file_path in file_list:
     # print(data)
     if is_first_cvtype(data):
         row=extract_first_format(data,file_path)
-        row.append('1')
     else:
         row=extract_second_format(data,file_path)
-        row.append("2")
-    
-        
-        
-    
 
+    #return [name, phone,email,address,ssn,birth,speciality,travel_experience]
+    #specific data to convert into another piece of data
+    speciality=row[6]
+
+    #json data formed
+    fullname=row[0]    
+    phone=row[1]
+    email=row[2]
+    full_address=get_fulladdress(row[3])
+    speciality_list=get_specialities(text=speciality)
+    experience_years=get_experience_years(text=speciality)
+    notes=speciality
+    print(fullname,full_address)
+    #
 
     with open(csv_list[-1], "a") as file_output:
         csv_output = csv.writer(file_output)
