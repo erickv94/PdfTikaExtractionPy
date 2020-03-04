@@ -4,6 +4,8 @@ import csv
 import datetime
 import os
 import re
+import requests
+import json
 
 file_list=glob.glob("pdf/*.pdf")
 file_list=[file_path.replace('pdf\\','pdf/') for file_path in file_list]
@@ -39,6 +41,26 @@ def extract_second_format(data,file_path):
         separator=" "
         speciality=separator.join(data[specialty_index:licenses_index])
 
+    if ("CERTIFICATIONS" in data):
+        crt_index = data.index("CERTIFICATIONS") + 1
+        temp = True
+        certification = []
+        while (temp):
+            save = True
+            if ("EDUCATION" in data[crt_index]):
+                temp = False
+
+            else:
+                temp2 = data[crt_index].split()[0]
+                #print(temp2)
+                for item in certification:
+                    if(temp2== item):
+                        print(" EL dato ya se registro")
+                        save=False
+                if(save):
+                    certification.append(temp2)
+                crt_index = crt_index + 1
+
     for index,attribute in enumerate(data):
         if re.search('\\(\\d{3}\\)\\s\\d{3}-\\d{4}',attribute) and index<=reference_index:
             phone=attribute
@@ -53,7 +75,7 @@ def extract_second_format(data,file_path):
             birth=attribute
 
     
-    return [name, phone,email,address,ssn,birth,speciality,travel_experience]
+    return [name, phone,email,address,ssn,birth,speciality,travel_experience,certification]
 
 def extract_first_format(data,file_path):
         #get personal data
@@ -85,8 +107,27 @@ def extract_first_format(data,file_path):
         ssn=data[ssn_index]
         if(ssn == "DATE OF BIRTH"):
             ssn=None
-        
-        
+    if("CERTIFICATIONS" in data):
+        crt_index = data.index("CERTIFICATIONS") + 1
+        temp = True
+        certification = []
+        while (temp):
+            save = True
+            if ("EDUCATION" in data[crt_index]):
+                temp = False
+
+            else:
+                temp2 = data[crt_index].split()[0]
+                # print(temp2)
+                for item in certification:
+                    if (temp2 == item):
+                        print(" EL dato ya se registro")
+                        save = False
+                if (save):
+                    certification.append(temp2)
+                crt_index = crt_index + 1
+
+
 
     if("TRAVEL EXPERIENCE" in data):
         travel_experience=True
@@ -112,7 +153,7 @@ def extract_first_format(data,file_path):
         if re.search("[0-9]{2}/[0-9]{2}/[0-9]{2}",attribute) and index > ssn_index and index <= ssn_index+2:
             birth=attribute
 
-    return [name, phone,email,address,ssn,birth,speciality,travel_experience]
+    return [name, phone,email,address,ssn,birth,speciality,travel_experience,certification]
 
 def get_specialities(text):
 
@@ -221,6 +262,35 @@ def get_fulladdress(text):
 
     full_address=text.split(',')[0]
     return full_address
+
+def get_addres(text):
+    if not text:
+        return None
+    if (len(text.split(','))>=3):
+        addres=text.split(',')[2]
+    else:
+        addres=text.split(',')[1]
+
+    state = addres.split()[0]
+    zip = addres.split()[1]
+    return [state, zip]
+
+
+def post_data(list):
+
+    test_data = {
+        'fields': {
+            'Nurse Full Name': list[0],
+            'Phone': list[1],
+            'Email': list[2],
+            'First Name': 'Francisco',
+            'Last Name': 'Mendoza',
+            'Nursa Status': '2 | Outreach',
+            'Source': 'NurseFly'
+        },
+    }
+
+
 #in case at least one pdf exists, the csv timestamp name will be created 
 if(file_list):
     file_csv_name=datetime.datetime.now().strftime('nursefly-%Y-%m-%d-%H-%M-%S.csv')
@@ -236,7 +306,7 @@ csv_list=[file_path.replace('data\\','data/') for file_path in csv_list]
 list_s=[]
 count=0
 for file_path in file_list:
-    raw = parser.from_file(file_path)
+    raw = parser.from_file("C:/Users/ferna/OneDrive/Desktop/PdfTikaExtractionPy/"+file_path)
     #focused on content
     raw = str(raw['content'])
     raw_lines=raw.splitlines()
@@ -262,10 +332,23 @@ for file_path in file_list:
     speciality_list=get_specialities(text=speciality)
     experience_years=get_experience_years(text=speciality)
     notes=speciality
-    print(fullname,full_address)
-    #
+    addres=get_addres(row[3])
+    if addres is not None:
+        state=addres[0]
+        zip= addres[1]
+    else:
+        state=None
+        zip=None
+    firstname=fullname.split()[0]
+    lastname=fullname.split()[1]
+    certifications=row[8]
+    print(fullname,certifications)
 
-    with open(csv_list[-1], "a") as file_output:
-        csv_output = csv.writer(file_output)
-        csv_output.writerow(row)
+   # print(fullname,firstname,lastname,full_address,state,zip)
+
+    #list_post.append(fullname,phone,email,'NurseFly')
+
+   # with open(csv_list[-1], "a") as file_output:
+    #    csv_output = csv.writer(file_output)
+     #   csv_output.writerow(row)
         
