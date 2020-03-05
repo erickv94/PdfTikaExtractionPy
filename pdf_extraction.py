@@ -55,11 +55,28 @@ def extract_second_format(data,file_path):
                 #print(temp2)
                 for item in certification:
                     if(temp2== item):
-                        print(" EL dato ya se registro")
+
                         save=False
                 if(save):
                     certification.append(temp2)
                 crt_index = crt_index + 1
+    if ("LICENSES" in data):
+        licences_index = data.index("LICENSES") + 1
+        temp = True
+        licences = []
+        while (temp):
+            save = True
+            if ("CERTIFICATIONS" in data[licences_index]):
+                temp = False
+            else:
+                temp2 = data[licences_index].split(",")[0]
+
+                for item in licences:
+                    if (temp2 == item):
+                        save = False
+                if (save):
+                    licences.append(temp2)
+                licences_index = licences_index + 1
 
     for index,attribute in enumerate(data):
         if re.search('\\(\\d{3}\\)\\s\\d{3}-\\d{4}',attribute) and index<=reference_index:
@@ -75,7 +92,7 @@ def extract_second_format(data,file_path):
             birth=attribute
 
     
-    return [name, phone,email,address,ssn,birth,speciality,travel_experience,certification]
+    return [name, phone,email,address,ssn,birth,speciality,travel_experience,certification,licences]
 
 def extract_first_format(data,file_path):
         #get personal data
@@ -121,11 +138,29 @@ def extract_first_format(data,file_path):
                 # print(temp2)
                 for item in certification:
                     if (temp2 == item):
-                        print(" EL dato ya se registro")
+                        
                         save = False
                 if (save):
                     certification.append(temp2)
                 crt_index = crt_index + 1
+
+    if ("LICENSES" in data):
+            licences_index = data.index("LICENSES") + 1
+            temp = True
+            licences = []
+            while (temp):
+                save = True
+                if ("CERTIFICATIONS" in data[licences_index]):
+                    temp = False
+                else:
+                    temp2 = data[licences_index].split(",")[0]
+
+                    for item in licences:
+                        if (temp2 == item):
+                            save = False
+                    if (save):
+                        licences.append(temp2)
+                    licences_index = licences_index + 1
 
 
 
@@ -153,7 +188,7 @@ def extract_first_format(data,file_path):
         if re.search("[0-9]{2}/[0-9]{2}/[0-9]{2}",attribute) and index > ssn_index and index <= ssn_index+2:
             birth=attribute
 
-    return [name, phone,email,address,ssn,birth,speciality,travel_experience,certification]
+    return [name, phone,email,address,ssn,birth,speciality,travel_experience,certification,licences]
 
 def get_specialities(text):
 
@@ -275,6 +310,190 @@ def get_addres(text):
     zip = addres.split()[1]
     return [state, zip]
 
+def get_state(text):
+
+  control=False
+  state_list= {
+        "649",
+        " ID",
+        " IL",
+        " MD ",
+        " MN ",
+        " OR ",
+        "AK",
+        "AL",
+        "Albany",
+        "AR",
+        "AZ",
+        "Boise",
+        "CA",
+        "CO",
+        "CT",
+        "DE",
+        "Fct",
+        "FL",
+        "FL ",
+        "GA",
+        "HI",
+        "IA",
+        "ID",
+        "IL",
+        "IN",
+        "KS",
+        "KY",
+        "LA",
+        "MD",
+        "MI",
+        "Mill",
+        "MN",
+        "MO",
+        "MS",
+        "NC",
+        "ND",
+        "NE",
+        "NV",
+        "NY",
+        "NY ",
+        "OH",
+        "OK",
+        "OR",
+        "PA",
+        "RI",
+        "Sacramento",
+        "SanBernardino",
+        "SC",
+        "TN",
+        "TX",
+        "TX ",
+        "UT",
+        "VA",
+        "WA",
+        "WI",
+        "Wilsonville",
+        "WV",
+        "WY",
+        "VI",
+        "MA",
+        "AU",
+        "NJ",
+        "VT",
+        "AE",
+        "SD",
+        "MT",
+        "GR",
+        "NM",
+        "AP",
+        "CN",
+        "AB",
+        "B."
+}
+  if not text:
+      return None
+
+  for index in state_list:
+        if (index == text):
+            control=True
+  if(control):
+    value=text
+  else:
+      value=None
+  return value
+
+def get_profesional_license(text):
+     control=False
+     temporal_variable=[]
+     license_list={
+         "RN | Registered Nurse",
+         "Other |",
+         "BSN | Bachelors of Registered Nursing",
+         "CMA | Certified Medical Assistant",
+         "CNA | Certified Nursing Assistant",
+         "CNM |",
+         "CRNA | Certified Registered Nurse Anesthetists",
+         "First Assist |",
+         "LPN/LVN | Licensed Practical Nurse",
+         "NP | Nurse Practitioner",
+         "Surg Tech | Surgery Technician",
+         "PERF | Perfusionist",
+         "CCP | Certified Cardiovascular Perfusionist",
+         "RN",
+         "OTHER",
+         "LPN",
+         "Certified nursing assistant"  }
+     if not text:
+         return None
+     for index in license_list:
+         for x in text:
+             if(index.split()[0] == x):
+                control = True
+                temporal_variable.append(index)
+     if (control):
+         value = temporal_variable
+     else:
+         value = text
+         value.append("Other")
+     return value
+
+def get_licensed_state(text):
+    control=False
+    list=[]
+    if not text:
+        return None
+    licensed_states={
+            "California":"CA",
+            "Idaho":"ID",
+            "Oregon":"OR",
+            "Utah":"UT",
+            "Georgia":"GA",
+            "Connecticut":"CT",
+            "Massachusetts":"MA",
+            "Florida":"FL",
+            "New York":"NY",
+            "Alaska":"AK",
+            "Hawaii":"HI",
+            "New Mexico":"NM",
+            "Kentucky":"KY",
+            "Missouri":"MO",
+            "Oklahoma":"OK",
+            "Ohio":"OH",
+            "Texas":"TX",
+            "Tennesse":"TN",
+            "Colorado":"CO",
+            "South Carolina":"SC",
+            "Vermont":"VT",
+            "West Virginia":"WV",
+            "Virginia":"VA",
+            "South Dakota":"SD",
+            "North Dakota":"ND",
+            "Nebraska":"NE",
+            "Rhode Island":"RI",
+            "Wisconsin":"WI",
+            "Washington":"WA",
+            "Iowa":"IA",
+            "Illinois":"IL",
+            "Mississippi":"MS",
+            "North Carolina":"NC",
+            "Pennsylvania":"PA",
+            "Minnesota":"MN",
+            "Louisana":"LA",
+            "Montana":"MT",
+            "Michigan":"MI",
+            "Nevada":"NV",
+            "Maine":"ME",
+            "New Hampshire":"NH",
+            "Alabama":"AL",
+            "Wyoming":"WY",
+            "Maryland":"MD",
+            "Arizona":"AZ",
+            "Kansas":"KS",
+            "Indiana":"IN",
+            "Arkansas":"AR",
+            "Delaware":"DE",
+           "New Jersey":"NJ"
+    }
+
+
+    return list
 
 def post_data(list):
 
@@ -289,6 +508,7 @@ def post_data(list):
             'Source': 'NurseFly'
         },
     }
+
 
 
 #in case at least one pdf exists, the csv timestamp name will be created 
@@ -342,7 +562,11 @@ for file_path in file_list:
     firstname=fullname.split()[0]
     lastname=fullname.split()[1]
     certifications=row[8]
-    print(fullname,certifications)
+    licences=row[9]
+
+    true_certifications=get_profesional_license(certifications)
+    true_state=get_state(state)
+    print(fullname,licences)
 
    # print(fullname,firstname,lastname,full_address,state,zip)
 
