@@ -257,18 +257,22 @@ def get_specialities(text):
         'sterile processing tech':'SPT | Sterile Processing Tech'
     }
     speciality_list=[]
-    
+    other_list=[]
+
     if not text:
-        return []
+        return None
+
 
     for speciality in specialities_availables.keys():
         if speciality in text.lower():
             speciality_list.append(specialities_availables[speciality])
 
     if not speciality_list:
-        speciality_list.append('Other')
+        speciality_list.append("Other")
+        other_list.append(text)
 
-    return speciality_list
+
+    return [speciality_list,other_list ]
 
 def get_experience_years(text):
     start_indexes=[]
@@ -402,41 +406,49 @@ def get_state(text):
 def get_profesional_license(text):
      control=False
      temporal_variable=[]
+     other=[]
      license_list={
-         "RN | Registered Nurse",
-         "Other |",
-         "BSN | Bachelors of Registered Nursing",
-         "CMA | Certified Medical Assistant",
-         "CNA | Certified Nursing Assistant",
-         "CNM |",
-         "CRNA | Certified Registered Nurse Anesthetists",
-         "First Assist |",
-         "LPN/LVN | Licensed Practical Nurse",
-         "NP | Nurse Practitioner",
-         "Surg Tech | Surgery Technician",
-         "PERF | Perfusionist",
-         "CCP | Certified Cardiovascular Perfusionist",
-         "RN",
-         "OTHER",
-         "LPN",
-         "Certified nursing assistant"  }
+         "RN":"RN | Registered Nurse",
+         "Other":"Other |",
+         "BSN":"BSN | Bachelors of Registered Nursing",
+         "BSN":"CMA | Certified Medical Assistant",
+         "CNA":"CNA | Certified Nursing Assistant",
+         "CNM":"CNM |",
+         "CRNA":"CRNA | Certified Registered Nurse Anesthetists",
+         "First Assist":"First Assist |",
+         "Nurse Practitioner":"NP | Nurse Practitioner",
+         "Surg Tech":"Surg Tech | Surgery Technician",
+         "Perfusionist:":"PERF | Perfusionist",
+         "Certified Cardiovascular Perfusionist":"CCP | Certified Cardiovascular Perfusionist",
+         "RN:":"RN",
+         "OTHER":"OTHER",
+         "LPN":"LPN",
+         "Certified nursing assistant":"Certified nursing assistant"  }
      if not text:
          return None
-     for index in license_list:
-         for x in text:
-             if(index.split()[0] == x):
-                control = True
+     for x in text:
+        for index in license_list.keys():
+             variable=x
+             if(index == x):
                 temporal_variable.append(index)
-     if (control):
-         value = temporal_variable
-     else:
-         value = text
-         value.append("Other")
-     return value
+                control=True
+        if(control==False):
+            variable2=False
+            for serch in temporal_variable:
+             if ("Other" in serch):
+               variable2=True
+
+            if(variable2==False):
+                temporal_variable.append("Other")
+            other.append(variable)
+        control=False
+
+     return [temporal_variable,other]
 
 def get_licensed_state(text):
     control=False
     list=[]
+    other=[]
     if not text:
         return None
     licensed_states={
@@ -475,7 +487,7 @@ def get_licensed_state(text):
             "North Carolina":"NC",
             "Pennsylvania":"PA",
             "Minnesota":"MN",
-            "Louisana":"LA",
+            "Louisiana":"LA",
             "Montana":"MT",
             "Michigan":"MI",
             "Nevada":"NV",
@@ -492,27 +504,176 @@ def get_licensed_state(text):
            "New Jersey":"NJ"
     }
 
+    if not text:
+        return None
 
-    return list
+    for x in text:
+        #print("Estado: " + x)
+        for index in licensed_states.keys():
+            variable=x
+            if ( index in  x ):
+                list.append(licensed_states[index])
+                control=True
+        if(control==False):
+            if("Lic:" in variable or "Exp:"in variable ):
+               save=False
+            else:
+                save=True
+            if(save):
+                other.append(variable)
+
+        control=False
+    return [list,other]
+
+def get_state(text):
+
+    if not text:
+        return None
+    list_states={
+    "649",
+    " ID",
+    " IL",
+    " MD ",
+    " MN ",
+    " OR ",
+    "AK",
+    "AL",
+    "Albany",
+    "AR",
+    "AZ",
+    "Boise",
+    "CA",
+    "CO",
+    "CT",
+    "DE",
+    "Fct",
+    "FL",
+    "FL ",
+    "GA",
+    "HI",
+    "IA",
+    "ID",
+    "IL",
+    "IN",
+    "KS",
+    "KY",
+    "LA",
+    "MD",
+    "MI",
+    "Mill",
+    "MN",
+    "MO",
+    "MS",
+    "NC",
+    "ND",
+    "NE",
+    "NV",
+    "NY",
+    "NY ",
+    "OH",
+    "OK",
+    "OR",
+    "PA",
+    "RI",
+    "Sacramento",
+    "SanBernardino",
+    "SC",
+    "TN",
+    "TX",
+    "TX ",
+    "UT",
+    "VA",
+    "WA",
+    "WI",
+    "Wilsonville",
+    "WV",
+    "WY",
+    "VI",
+    "MA",
+    "AU",
+    "NJ",
+    "VT",
+    "AE",
+    "SD",
+    "MT",
+    "GR",
+    "NM",
+    "AP",
+    "CN",
+    "AB",
+    "B."
+    }
+    variable=None
+    for index in list_states:
+        if(text==index):
+            variable=True
+
+    if(variable):
+        value=text
+    else:
+        value=None
+    return value
+
+
 
 def post_data(list):
+    apikey = {'api_key': 'keyFt0iUCIPncgJA6'}
+    url = 'https://api.airtable.com/v0/appIap7xPyOplHI7c/NursaDbAvalogics'
 
-    test_data = {
-        'fields': {
-            'Nurse Full Name': list[0],
-            'Phone': list[1],
-            'Email': list[2],
-            'First Name': 'Francisco',
-            'Last Name': 'Mendoza',
-            'Nursa Status': '2 | Outreach',
-            'Source': 'NurseFly'
-        },
-    }
+
+    if(list[14] is  None or list[14]=="" or list[14]==[]):
+        test_data = {
+            'fields': {
+                'Nurse Full Name': list[0],
+                'Phone': list[1],
+                'Email': list[2],
+                'Source': list[3],
+                'First Name':list[5],
+                'Last Name':list[6],
+               # 'Notes':list[7],
+              #'Licensed States':[list[8]],
+                #'Specialty':[list[9]],
+                'Experience (In Years)':list[10],
+                'Full Address':list[11],
+                'State':list[12],
+                'Zip':list[13]
+
+            },
+         }
+    else:
+       # print("El valor de SSn es: " + list[14])
+        test_data = {
+            'fields': {
+                'Nurse Full Name': list[0],
+                'Phone': list[1],
+                'Email': list[2],
+                'Source': list[3],
+                # 'Profession License':[list[4]],
+                'First Name': list[5],
+                'Last Name': list[6],
+                 'Notes':list[7],
+                # 'Licensed States':[list[8]],
+                # 'Specialty':[list[9]],
+                'Experience (In Years)': list[10],
+                'Full Address': list[11],
+                'State': list[12],
+                'Zip': list[13],
+                'SSN': int(list[14])
+            },
+        }
+
+    try:
+        r = requests.post(url, params=apikey, json=test_data)
+        print(r.json())
+    except:
+        print("Error")
+
+
 
 
 
 #in case at least one pdf exists, the csv timestamp name will be created 
-if(file_list):
+""" if(file_list):
     file_csv_name=datetime.datetime.now().strftime('nursefly-%Y-%m-%d-%H-%M-%S.csv')
     with open("./data/"+file_csv_name, "w+") as file_output:
         csv_output = csv.writer(file_output)
@@ -521,12 +682,13 @@ if(file_list):
 #the csv listed ordered by datetime of creation    
 csv_list=glob.glob("data/*.csv")
 csv_list=[file_path.replace('data\\','data/') for file_path in csv_list]
-
+"""
 
 list_s=[]
 count=0
 for file_path in file_list:
     raw = parser.from_file("C:/Users/ferna/OneDrive/Desktop/PdfTikaExtractionPy/"+file_path)
+
     #focused on content
     raw = str(raw['content'])
     raw_lines=raw.splitlines()
@@ -549,9 +711,19 @@ for file_path in file_list:
     phone=row[1]
     email=row[2]
     full_address=get_fulladdress(row[3])
-    speciality_list=get_specialities(text=speciality)
+
+    if (speciality is not None):
+        speciality_list=get_specialities(text=speciality)[0]
+        notes = get_specialities(text=speciality)[1]
+        if(speciality_list is not None):
+            if(len(speciality_list)>=2):
+                notes_especial=speciality
+            else:
+                notes_especial=None
+    else:
+        speciality_list=None
+        notes=None
     experience_years=get_experience_years(text=speciality)
-    notes=speciality
     addres=get_addres(row[3])
     if addres is not None:
         state=addres[0]
@@ -563,10 +735,75 @@ for file_path in file_list:
     lastname=fullname.split()[1]
     certifications=row[8]
     licences=row[9]
+    SSN=row[4]
+    #print(certifications)
+    if certifications is None  or certifications==[] :
+        professional_license = None
+        notes2 = None
+    else:
+        professional_license = get_profesional_license(certifications)[0]  # Other
+        notes2 = get_profesional_license(certifications)[1]
 
-    true_certifications=get_profesional_license(certifications)
+
     true_state=get_state(state)
-    print(fullname,licences)
+
+    if licences is None  or licences==[] :
+        licenced_state = None
+        notes3 = None
+    else:
+        licenced_state = get_licensed_state(licences)[0]  # Other
+        # Other
+        notes3=get_licensed_state(licences)[1]  #Other
+
+
+    if(notes==[]):
+        notes=None
+    if(notes2==[]):
+        notes2=None
+    if(notes3==[]):
+        notes3= None
+    text="Specility Notes (Not contained in the dictionary): "
+    text2 ="Professional License Notes (Not contained in the dictionary): "
+    text3="Licenced State Notes (Not contained in the dictionary): "
+    state_variable = get_state(state)
+    notes_final=""
+
+    final_note=[]
+    if notes is not None:
+        final_note.append(notes)
+        for index in notes:
+            text=text + index + " "
+        notes_final=notes_final+text
+
+    if notes2 is not None:
+         final_note.append(notes2)
+         for item in notes2:
+             text2=text2 + item + " "
+         notes_final = notes_final + text2
+    if notes3 is not None:
+        final_note.append(notes3)
+        for index in notes3:
+            text3 = text3 + index + " "
+        notes_final = notes_final + text3
+
+    if(notes_especial is not None):
+      notes_final=notes_final+" ; Specialty Info for Two or more specialty: "+notes_especial
+
+
+    print(fullname,notes_final)
+    if(final_note==[]):
+            final_note=None
+    #print(fullname,final_note)
+
+
+    post_data([fullname,phone,email,'NurseFly',professional_license,firstname,lastname,
+               notes_final,licenced_state,speciality_list,experience_years,full_address,state_variable,zip,SSN])
+
+
+    #print(fullname,phone,email,"NurseFly",professional_license,firstname,lastname,final_note
+     #   ,licenced_state,speciality_list,experience_years,full_address,state_variable,zip,SSN,)
+
+
 
    # print(fullname,firstname,lastname,full_address,state,zip)
 
