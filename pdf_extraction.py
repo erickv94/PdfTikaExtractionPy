@@ -6,6 +6,7 @@ import os
 import re
 import requests
 import json
+from jsonmerge import merge
 
 file_list=glob.glob("pdf/*.pdf")
 file_list=[file_path.replace('pdf\\','pdf/') for file_path in file_list]
@@ -52,7 +53,7 @@ def extract_second_format(data,file_path):
 
             else:
                 temp2 = data[crt_index].split()[0]
-                #print(temp2)
+
                 for item in certification:
                     if(temp2== item):
 
@@ -135,7 +136,7 @@ def extract_first_format(data,file_path):
 
             else:
                 temp2 = data[crt_index].split()[0]
-                # print(temp2)
+
                 for item in certification:
                     if (temp2 == item):
                         
@@ -200,7 +201,7 @@ def get_specialities(text):
         'hospital administration': 'ADM | Hospital Administration', #cbr
         'cardiovasculta intensive care':'CVICU | Cardiovascular Intensive Care Unit', #cbr
         'nicu': 'NICU | Neonatal Intensive Care Unit',
-        'med surg':'MedSurg | Medical/SurgicalICU',
+        'med surg':"MedSurg | Medical/Surgical",
         'intensive care unit': 'ICU | Intensive Care Unit',
         'registered nurse':'RN | Registered Nurse',
         'charge nurse': 'CHRG | Charge Nurse',
@@ -430,7 +431,7 @@ def get_profesional_license(text):
         for index in license_list.keys():
              variable=x
              if(index == x):
-                temporal_variable.append(index)
+                temporal_variable.append(license_list[index])
                 control=True
         if(control==False):
             variable2=False
@@ -439,7 +440,7 @@ def get_profesional_license(text):
                variable2=True
 
             if(variable2==False):
-                temporal_variable.append("Other")
+                temporal_variable.append("Other |")
             other.append(variable)
         control=False
 
@@ -508,7 +509,7 @@ def get_licensed_state(text):
         return None
 
     for x in text:
-        #print("Estado: " + x)
+
         for index in licensed_states.keys():
             variable=x
             if ( index in  x ):
@@ -614,11 +615,23 @@ def get_state(text):
         value=None
     return value
 
-
-
 def post_data(list):
     apikey = {'api_key': 'keyFt0iUCIPncgJA6'}
     url = 'https://api.airtable.com/v0/appIap7xPyOplHI7c/NursaDbAvalogics'
+     # 'Profession License':[list[4]],
+    if(list[4] is not None):
+        professional=professional_licensed_post(list[4])
+    else:
+        professional=None
+
+    if(list[9] is not None):
+        specility=specility_post(list[9])
+    else:
+        specility=None
+    if (list[8] is not None):
+     licenced_state=licenced_state_post(list[8])
+    else:
+        licenced_state=None
 
 
     if(list[14] is  None or list[14]=="" or list[14]==[]):
@@ -628,6 +641,7 @@ def post_data(list):
                 'Phone': list[1],
                 'Email': list[2],
                 'Source': list[3],
+                # 'Profession License':[list[4]],
                 'First Name':list[5],
                 'Last Name':list[6],
                # 'Notes':list[7],
@@ -641,7 +655,7 @@ def post_data(list):
             },
          }
     else:
-       # print("El valor de SSn es: " + list[14])
+
         test_data = {
             'fields': {
                 'Nurse Full Name': list[0],
@@ -662,154 +676,904 @@ def post_data(list):
             },
         }
 
+    if(professional is not None):
+        if(specility is not None):
+            if(licenced_state is not None):
+                result = merge(test_data, specility)
+                result2 = merge(result,professional )
+                result3 = merge(result2, licenced_state)
+                data_post=result3
+            else:
+                result = merge(test_data, professional)
+                result2 = merge(result, specility)
+                data_post = result2
+        else:
+            if (licenced_state is not None):
+                result = merge(test_data, professional)
+                result2 = merge(result, licenced_state)
+                data_post = result2
+            else:
+                result = merge(test_data, professional)
+                data_post = result
+    else:
+        if(specility is not None):
+            if(licenced_state is not None):
+                result = merge(test_data, specility)
+                result2 = merge(result, licenced_state)
+                data_post=result2
+            else:
+                result = merge(test_data, specility)
+                data_post = result
+
+        else:
+            if(licenced_state is not None):
+                result = merge(test_data, licenced_state)
+                data_post=result
+            else:
+                data_post=test_data
+
+
+
+
+
     try:
-        r = requests.post(url, params=apikey, json=test_data)
+        r = requests.post(url, params=apikey, json=data_post)
         print(r.json())
     except:
-        print("Error")
+        print("Error in post Data check to end point.")
 
+def professional_licensed_post(list):
+    apikey = {'api_key': 'keyFt0iUCIPncgJA6'}
+    url = 'https://api.airtable.com/v0/appIap7xPyOplHI7c/NursaDbAvalogics' + "/rec0lKECTVOYBlppb",
 
+    if list is  None:
+        return None
+    if list==[]:
+        return None
 
+    index=len(list)
 
-
-#in case at least one pdf exists, the csv timestamp name will be created 
-""" if(file_list):
-    file_csv_name=datetime.datetime.now().strftime('nursefly-%Y-%m-%d-%H-%M-%S.csv')
-    with open("./data/"+file_csv_name, "w+") as file_output:
-        csv_output = csv.writer(file_output)
-        csv_output.writerow(["Name", "Phone","Email","Address","SSN","Date of Birth","Speciality","Travel Experience",'CV type'])
-
-#the csv listed ordered by datetime of creation    
-csv_list=glob.glob("data/*.csv")
-csv_list=[file_path.replace('data\\','data/') for file_path in csv_list]
-"""
-
-list_s=[]
-count=0
-for file_path in file_list:
-    raw = parser.from_file("C:/Users/ferna/OneDrive/Desktop/PdfTikaExtractionPy/"+file_path)
-
-    #focused on content
-    raw = str(raw['content'])
-    raw_lines=raw.splitlines()
-    CRED = '\033[91m'   
-    CEND = '\033[0m'
-    #here the data will be filter avoiding empty strings
-    data= list(filter(None,raw_lines))
-    # print(data)
-    if is_first_cvtype(data):
-        row=extract_first_format(data,file_path)
+    if index==1:
+        test_data={
+            'fields': {
+             'Profession License':
+                [
+                  list[0]
+                ]
+            },
+        }
     else:
-        row=extract_second_format(data,file_path)
+        if index==2:
+            test_data = {
+                'fields': {
+                    'Profession License':
+                        [
+                            list[0],
+                            list[1]
+                        ]
+                },
+            }
+        else:
+            if index==3:
+                test_data = {
+                    'fields': {
 
-    #return [name, phone,email,address,ssn,birth,speciality,travel_experience]
-    #specific data to convert into another piece of data
-    speciality=row[6]
-
-    #json data formed
-    fullname=row[0]    
-    phone=row[1]
-    email=row[2]
-    full_address=get_fulladdress(row[3])
-
-    if (speciality is not None):
-        speciality_list=get_specialities(text=speciality)[0]
-        notes = get_specialities(text=speciality)[1]
-        if(speciality_list is not None):
-            if(len(speciality_list)>=2):
-                notes_especial=speciality
+                        'Profession License':
+                            [
+                                list[0],
+                                list[1],
+                                list[2]
+                            ]
+                    },
+                }
             else:
-                notes_especial=None
+                if index==4:
+                    test_data = {
+                        'fields': {
+
+                            'Profession License':
+                                [
+                                    list[0],
+                                    list[1],
+                                    list[2],
+                                    list[3]
+                                ]
+                        },
+                    }
+                else:
+                   if index==5:
+                        test_data = {
+                            'fields': {
+
+                                'Profession License':
+                                    [
+                                        list[0],
+                                        list[1],
+                                        list[2],
+                                        list[3],
+                                        list[4]
+                                    ]
+                            },
+
+                    }
+                   else:
+                       if index==6:
+                           test_data = {
+                               'fields': {
+
+                                   'Profession License':
+                                       [
+                                           list[0],
+                                           list[1],
+                                           list[2],
+                                           list[3],
+                                           list[4],
+                                           list[5]
+                                       ]
+                               },
+                           }
+                       else:
+                           if index==7:
+                               test_data = {
+                                   'fields': {
+
+                                           [
+                                               list[0],
+                                               list[1],
+                                               list[2],
+                                               list[3],
+                                               list[4],
+                                               list[5],
+                                               list[6]
+                                           ]
+                                   },
+                               }
+                           else:
+                               if index==8:
+                                   test_data = {
+                                       'fields': {
+
+                                           'Profession License':
+                                               [
+                                                   list[0],
+                                                   list[1],
+                                                   list[2],
+                                                   list[3],
+                                                   list[4],
+                                                   list[5],
+                                                   list[6],
+                                                   list[7]
+                                               ]
+                                       },
+                                   }
+                               else:
+                                   if index==9:
+                                       test_data = {
+                                           'fields': {
+
+                                               'Profession License':
+                                                   [
+                                                       list[0],
+                                                       list[1],
+                                                       list[2],
+                                                       list[3],
+                                                       list[4],
+                                                       list[5],
+                                                       list[6],
+                                                       list[7],
+                                                       list[8]
+                                                   ]
+                                           },
+                                       }
+                                   else:
+                                       if index==10:
+                                           test_data = {
+                                               'fields': {
+
+                                                   'Profession License':
+                                                       [
+                                                           list[0],
+                                                           list[1],
+                                                           list[2],
+                                                           list[3],
+                                                           list[4],
+                                                           list[5],
+                                                           list[6],
+                                                           list[7],
+                                                           list[8],
+                                                           list[9]
+                                                       ]
+                                               },
+                                           }
+
+    return test_data
+
+def specility_post(list):
+    if list is None:
+        return None
+    if list == []:
+        return None
+    index = len(list)
+
+    if index == 1:
+        test_data = {
+            'fields': {
+                'Specialty':
+                    [
+                        list[0]
+                    ]
+            },
+        }
     else:
-        speciality_list=None
-        notes=None
-    experience_years=get_experience_years(text=speciality)
-    addres=get_addres(row[3])
-    if addres is not None:
-        state=addres[0]
-        zip= addres[1]
+        if index == 2:
+            test_data = {
+                'fields': {
+                    'Specialty':
+                        [
+                            list[0],
+                            list[1]
+                        ]
+                },
+            }
+        else:
+            if index == 3:
+                test_data = {
+                    'fields': {
+
+                        'Specialty':
+                            [
+                                list[0],
+                                list[1],
+                                list[2]
+                            ]
+                    },
+                }
+            else:
+                if index == 4:
+                    test_data = {
+                        'fields': {
+
+                            'Specialty':
+                                [
+                                    list[0],
+                                    list[1],
+                                    list[2],
+                                    list[3]
+                                ]
+                        },
+                    }
+                else:
+                    if index == 5:
+                        test_data = {
+                            'fields': {
+
+                                'Specialty':
+                                    [
+                                        list[0],
+                                        list[1],
+                                        list[2],
+                                        list[3],
+                                        list[4]
+                                    ]
+                            },
+
+                        }
+                    else:
+                        if index == 6:
+                            test_data = {
+                                'fields': {
+
+                                    'Specialty':
+                                        [
+                                            list[0],
+                                            list[1],
+                                            list[2],
+                                            list[3],
+                                            list[4],
+                                            list[5]
+                                        ]
+                                },
+                            }
+                        else:
+                            if index == 7:
+                                test_data = {
+                                    'fields': {
+                                    'Specialty':
+                                        [
+                                            list[0],
+                                            list[1],
+                                            list[2],
+                                            list[3],
+                                            list[4],
+                                            list[5],
+                                            list[6]
+                                        ]
+                                    },
+                                }
+                            else:
+                                if index == 8:
+                                    test_data = {
+                                        'fields': {
+
+                                            'Specialty':
+                                                [
+                                                    list[0],
+                                                    list[1],
+                                                    list[2],
+                                                    list[3],
+                                                    list[4],
+                                                    list[5],
+                                                    list[6],
+                                                    list[7]
+                                                ]
+                                        },
+                                    }
+                                else:
+                                    if index == 9:
+                                        test_data = {
+                                            'fields': {
+
+                                                'Specialty':
+                                                    [
+                                                        list[0],
+                                                        list[1],
+                                                        list[2],
+                                                        list[3],
+                                                        list[4],
+                                                        list[5],
+                                                        list[6],
+                                                        list[7],
+                                                        list[8]
+                                                    ]
+                                            },
+                                        }
+                                    else:
+                                        if index == 10:
+                                            test_data = {
+                                                'fields': {
+
+                                                    'Specialty':
+                                                        [
+                                                            list[0],
+                                                            list[1],
+                                                            list[2],
+                                                            list[3],
+                                                            list[4],
+                                                            list[5],
+                                                            list[6],
+                                                            list[7],
+                                                            list[8],
+                                                            list[9]
+                                                        ]
+                                                },
+                                            }
+
+    return test_data
+
+def licenced_state_post(list):
+    if list is None:
+        return None
+    if list == []:
+        return None
+    index = len(list)
+    if(index==0):
+        return None
+
+    if index == 1:
+        test_data = {
+            'fields': {
+                'Licensed States':
+                    [
+                        list[0]
+                    ]
+            },
+        }
     else:
-        state=None
-        zip=None
-    firstname=fullname.split()[0]
-    lastname=fullname.split()[1]
-    certifications=row[8]
-    licences=row[9]
-    SSN=row[4]
-    #print(certifications)
-    if certifications is None  or certifications==[] :
-        professional_license = None
-        notes2 = None
-    else:
-        professional_license = get_profesional_license(certifications)[0]  # Other
-        notes2 = get_profesional_license(certifications)[1]
+        if index == 2:
+            test_data = {
+                'fields': {
+                    'Licensed States':
+                        [
+                            list[0],
+                            list[1]
+                        ]
+                },
+            }
+        else:
+            if index == 3:
+                test_data = {
+                    'fields': {
+
+                        'Licensed States':
+                            [
+                                list[0],
+                                list[1],
+                                list[2]
+                            ]
+                    },
+                }
+            else:
+                if index == 4:
+                    test_data = {
+                        'fields': {
+
+                            'Licensed States':
+                                [
+                                    list[0],
+                                    list[1],
+                                    list[2],
+                                    list[3]
+                                ]
+                        },
+                    }
+                else:
+                    if index == 5:
+                        test_data = {
+                            'fields': {
+
+                                'Licensed States':
+                                    [
+                                        list[0],
+                                        list[1],
+                                        list[2],
+                                        list[3],
+                                        list[4]
+                                    ]
+                            },
+
+                        }
+                    else:
+                        if index == 6:
+                            test_data = {
+                                'fields': {
+
+                                    'Licensed States':
+                                        [
+                                            list[0],
+                                            list[1],
+                                            list[2],
+                                            list[3],
+                                            list[4],
+                                            list[5]
+                                        ]
+                                },
+                            }
+                        else:
+                            if index == 7:
+                                test_data = {
+                                    'fields': {
+                                    'Licensed States':
+                                        [
+                                            list[0],
+                                            list[1],
+                                            list[2],
+                                            list[3],
+                                            list[4],
+                                            list[5],
+                                            list[6]
+                                        ]
+                                    },
+                                }
+                            else:
+                                if index == 8:
+                                    test_data = {
+                                        'fields': {
+
+                                            'Licensed States':
+                                                [
+                                                    list[0],
+                                                    list[1],
+                                                    list[2],
+                                                    list[3],
+                                                    list[4],
+                                                    list[5],
+                                                    list[6],
+                                                    list[7]
+                                                ]
+                                        },
+                                    }
+                                else:
+                                    if index == 9:
+                                        test_data = {
+                                            'fields': {
+
+                                                'Licensed States':
+                                                    [
+                                                        list[0],
+                                                        list[1],
+                                                        list[2],
+                                                        list[3],
+                                                        list[4],
+                                                        list[5],
+                                                        list[6],
+                                                        list[7],
+                                                        list[8]
+                                                    ]
+                                            },
+                                        }
+                                    else:
+                                        if index == 10:
+                                            test_data = {
+                                                'fields': {
+
+                                                    'Licensed States':
+                                                        [
+                                                            list[0],
+                                                            list[1],
+                                                            list[2],
+                                                            list[3],
+                                                            list[4],
+                                                            list[5],
+                                                            list[6],
+                                                            list[7],
+                                                            list[8],
+                                                            list[9]
+                                                        ]
+                                                },
+                                            }
+                                        else:
+                                            if index==11:
+                                                test_data = {
+                                                    'fields': {
+
+                                                        'Licensed States':
+                                                            [
+                                                                list[0],
+                                                                list[1],
+                                                                list[2],
+                                                                list[3],
+                                                                list[4],
+                                                                list[5],
+                                                                list[6],
+                                                                list[7],
+                                                                list[8],
+                                                                list[9],
+                                                                list[10]
+                                                            ]
+                                                    },
+                                                }
+                                            else:
+                                                if index==12:
+                                                    test_data = {
+                                                        'fields': {
+
+                                                            'Licensed States':
+                                                                [
+                                                                    list[0],
+                                                                    list[1],
+                                                                    list[2],
+                                                                    list[3],
+                                                                    list[4],
+                                                                    list[5],
+                                                                    list[6],
+                                                                    list[7],
+                                                                    list[8],
+                                                                    list[9],
+                                                                    list[10],
+                                                                    list[11]
+                                                                ]
+                                                        },
+                                                    }
+                                                else:
+                                                    if index==13:
+                                                        test_data = {
+                                                            'fields': {
+
+                                                                'Licensed States':
+                                                                    [
+                                                                        list[0],
+                                                                        list[1],
+                                                                        list[2],
+                                                                        list[3],
+                                                                        list[4],
+                                                                        list[5],
+                                                                        list[6],
+                                                                        list[7],
+                                                                        list[8],
+                                                                        list[9],
+                                                                        list[10],
+                                                                        list[11],
+                                                                        list[12]
+                                                                    ]
+                                                            },
+                                                        }
+                                                    else:
+                                                        if index==14:
+                                                            test_data = {
+                                                                'fields': {
+
+                                                                    'Licensed States':
+                                                                        [
+                                                                            list[0],
+                                                                            list[1],
+                                                                            list[2],
+                                                                            list[3],
+                                                                            list[4],
+                                                                            list[5],
+                                                                            list[6],
+                                                                            list[7],
+                                                                            list[8],
+                                                                            list[9],
+                                                                            list[10],
+                                                                            list[11],
+                                                                            list[12],
+                                                                            list[13]
+                                                                        ]
+                                                                },
+                                                            }
+                                                        else:
+                                                            if index==15:
+                                                                test_data = {
+                                                                    'fields': {
+
+                                                                        'Licensed States':
+                                                                            [
+                                                                                list[0],
+                                                                                list[1],
+                                                                                list[2],
+                                                                                list[3],
+                                                                                list[4],
+                                                                                list[5],
+                                                                                list[6],
+                                                                                list[7],
+                                                                                list[8],
+                                                                                list[9],
+                                                                                list[10],
+                                                                                list[11],
+                                                                                list[12],
+                                                                                list[13],
+                                                                                list[14]
+                                                                            ]
+                                                                    },
+                                                                }
+                                                            else:
+                                                                if index==16:
+                                                                    test_data = {
+                                                                        'fields': {
+
+                                                                            'Licensed States':
+                                                                                [
+                                                                                    list[0],
+                                                                                    list[1],
+                                                                                    list[2],
+                                                                                    list[3],
+                                                                                    list[4],
+                                                                                    list[5],
+                                                                                    list[6],
+                                                                                    list[7],
+                                                                                    list[8],
+                                                                                    list[9],
+                                                                                    list[10],
+                                                                                    list[11],
+                                                                                    list[12],
+                                                                                    list[13],
+                                                                                    list[14],
+                                                                                    list[15]
+                                                                                ]
+                                                                        },
+                                                                    }
+                                                                else:
+                                                                    if index==17:
+                                                                        test_data = {
+                                                                            'fields': {
+
+                                                                                'Licensed States':
+                                                                                    [
+                                                                                        list[0],
+                                                                                        list[1],
+                                                                                        list[2],
+                                                                                        list[3],
+                                                                                        list[4],
+                                                                                        list[5],
+                                                                                        list[6],
+                                                                                        list[7],
+                                                                                        list[8],
+                                                                                        list[9],
+                                                                                        list[10],
+                                                                                        list[11],
+                                                                                        list[12],
+                                                                                        list[13],
+                                                                                        list[14],
+                                                                                        list[15],
+                                                                                        list[16]
+                                                                                    ]
+                                                                            },
+                                                                        }
+                                                                    else:
+                                                                        if index==18:
+                                                                            test_data = {
+                                                                                'fields': {
+
+                                                                                    'Licensed States':
+                                                                                        [
+                                                                                            list[0],
+                                                                                            list[1],
+                                                                                            list[2],
+                                                                                            list[3],
+                                                                                            list[4],
+                                                                                            list[5],
+                                                                                            list[6],
+                                                                                            list[7],
+                                                                                            list[8],
+                                                                                            list[9],
+                                                                                            list[10],
+                                                                                            list[11],
+                                                                                            list[12],
+                                                                                            list[13],
+                                                                                            list[14],
+                                                                                            list[15],
+                                                                                            list[16],
+                                                                                            list[17]
+                                                                                        ]
+                                                                                },
+                                                                            }
+                                                                        else:
+                                                                            if index==19:
+                                                                                test_data = {
+                                                                                    'fields': {
+
+                                                                                        'Licensed States':
+                                                                                            [
+                                                                                                list[0],
+                                                                                                list[1],
+                                                                                                list[2],
+                                                                                                list[3],
+                                                                                                list[4],
+                                                                                                list[5],
+                                                                                                list[6],
+                                                                                                list[7],
+                                                                                                list[8],
+                                                                                                list[9],
+                                                                                                list[10],
+                                                                                                list[11],
+                                                                                                list[12],
+                                                                                                list[13],
+                                                                                                list[14],
+                                                                                                list[15],
+                                                                                                list[16],
+                                                                                                list[17],
+                                                                                                list[18]
+                                                                                            ]
+                                                                                    },
+                                                                                }
+                                                                            else:
+                                                                                test_data = {
+                                                                                    'fields': {
+
+                                                                                        'Licensed States':
+                                                                                            [
+                                                                                                list[0],
+                                                                                                list[1],
+                                                                                                list[2],
+                                                                                                list[3],
+                                                                                                list[4],
+                                                                                                list[5],
+                                                                                                list[6],
+                                                                                                list[7],
+                                                                                                list[8],
+                                                                                                list[9],
+                                                                                                list[10],
+                                                                                                list[11],
+                                                                                                list[12],
+                                                                                                list[13],
+                                                                                                list[14],
+                                                                                                list[15],
+                                                                                                list[16],
+                                                                                                list[17],
+                                                                                                list[18],
+                                                                                                list[19]
+                                                                                            ]
+                                                                                    },
+                                                                                }
+
+    return test_data
+
+def extract_data():
+        list_s=[]
+        count=0
+        for file_path in file_list:
+            raw = parser.from_file("C:/Users/ferna/OneDrive/Desktop/PdfTikaExtractionPy/"+file_path)
+
+            #focused on content
+            raw = str(raw['content'])
+            raw_lines=raw.splitlines()
+            CRED = '\033[91m'
+            CEND = '\033[0m'
+            #here the data will be filter avoiding empty strings
+            data= list(filter(None,raw_lines))
+            # print(data)
+            if is_first_cvtype(data):
+                row=extract_first_format(data,file_path)
+            else:
+                row=extract_second_format(data,file_path)
 
 
-    true_state=get_state(state)
 
-    if licences is None  or licences==[] :
-        licenced_state = None
-        notes3 = None
-    else:
-        licenced_state = get_licensed_state(licences)[0]  # Other
-        # Other
-        notes3=get_licensed_state(licences)[1]  #Other
+            speciality=row[6]
 
+            #json data formed
+            fullname=row[0]
+            phone=row[1]
+            email=row[2]
+            full_address=get_fulladdress(row[3])
 
-    if(notes==[]):
-        notes=None
-    if(notes2==[]):
-        notes2=None
-    if(notes3==[]):
-        notes3= None
-    text="Specility Notes (Not contained in the dictionary): "
-    text2 ="Professional License Notes (Not contained in the dictionary): "
-    text3="Licenced State Notes (Not contained in the dictionary): "
-    state_variable = get_state(state)
-    notes_final=""
+            if (speciality is not None):
+                speciality_list=get_specialities(text=speciality)[0]
+                notes = get_specialities(text=speciality)[1]
+                if(speciality_list is not None):
+                    if(len(speciality_list)>=2):
+                        notes_especial=speciality
+                    else:
+                        notes_especial=None
+            else:
+                speciality_list=None
+                notes=None
+            experience_years=get_experience_years(text=speciality)
+            addres=get_addres(row[3])
+            if addres is not None:
+                state=addres[0]
+                zip= addres[1]
+            else:
+                state=None
+                zip=None
+            firstname=fullname.split()[0]
+            lastname=fullname.split()[1]
+            certifications=row[8]
+            licences=row[9]
+            SSN=row[4]
 
-    final_note=[]
-    if notes is not None:
-        final_note.append(notes)
-        for index in notes:
-            text=text + index + " "
-        notes_final=notes_final+text
-
-    if notes2 is not None:
-         final_note.append(notes2)
-         for item in notes2:
-             text2=text2 + item + " "
-         notes_final = notes_final + text2
-    if notes3 is not None:
-        final_note.append(notes3)
-        for index in notes3:
-            text3 = text3 + index + " "
-        notes_final = notes_final + text3
-
-    if(notes_especial is not None):
-      notes_final=notes_final+" ; Specialty Info for Two or more specialty: "+notes_especial
+            if certifications is None  or certifications==[] :
+                professional_license = None
+                notes2 = None
+            else:
+                professional_license = get_profesional_license(certifications)[0]
+                notes2 = get_profesional_license(certifications)[1]
 
 
-    print(fullname,notes_final)
-    if(final_note==[]):
-            final_note=None
-    #print(fullname,final_note)
+            true_state=get_state(state)
+
+            if licences is None  or licences==[] :
+                licenced_state = None
+                notes3 = None
+            else:
+                licenced_state = get_licensed_state(licences)[0]
+
+                notes3=get_licensed_state(licences)[1]
+            if(notes==[]):
+                notes=None
+            if(notes2==[]):
+                notes2=None
+            if(notes3==[]):
+                notes3= None
+            text="Specility Notes (Not contained in the dictionary): "
+            text2 ="Professional License Notes (Not contained in the dictionary): "
+            text3="Licenced State Notes (Not contained in the dictionary): "
+            state_variable = get_state(state)
+            notes_final=""
+
+            if notes is not None:
+                for index in notes:
+                    text=text + index + " "
+                notes_final=notes_final+text
+
+            if notes2 is not None:
+                 for item in notes2:
+                     text2=text2 + item + " "
+                 notes_final = notes_final + text2
+            if notes3 is not None:
+                for index in notes3:
+                    text3 = text3 + index + " "
+                notes_final = notes_final + text3
+
+            if(notes_especial is not None):
+              notes_final=notes_final+" ; Specialty Info for Two or more specialty: "+notes_especial
 
 
-    post_data([fullname,phone,email,'NurseFly',professional_license,firstname,lastname,
-               notes_final,licenced_state,speciality_list,experience_years,full_address,state_variable,zip,SSN])
 
 
-    #print(fullname,phone,email,"NurseFly",professional_license,firstname,lastname,final_note
-     #   ,licenced_state,speciality_list,experience_years,full_address,state_variable,zip,SSN,)
+            post_data([fullname, phone, email, 'NurseFly', professional_license, firstname, lastname,
+                             notes_final,licenced_state,speciality_list,experience_years,full_address,state_variable,zip,SSN])
 
 
 
-   # print(fullname,firstname,lastname,full_address,state,zip)
-
-    #list_post.append(fullname,phone,email,'NurseFly')
-
-   # with open(csv_list[-1], "a") as file_output:
-    #    csv_output = csv.writer(file_output)
-     #   csv_output.writerow(row)
-        
+extract_data()
