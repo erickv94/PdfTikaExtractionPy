@@ -1472,7 +1472,8 @@ def extract_data():
         list_s=[]
         count=0
         for file_path in file_list:
-            raw = parser.from_file("C:/Users/ferna/OneDrive/Desktop/PdfTikaExtractionPy/"+file_path)
+            #raw = parser.from_file("C:/Users/ferna/OneDrive/Desktop/PdfTikaExtractionPy/"+file_path)
+            raw = parser.from_file(file_path)
 
             #focused on content
             raw = str(raw['content'])
@@ -1519,6 +1520,7 @@ def extract_data():
             firstname=fullname.split()[0]
             lastname=fullname.split()[1]
             certifications=row[8]
+            print(fullname,certifications)
             licences=row[9]
             SSN=row[4]
 
@@ -1571,8 +1573,8 @@ def extract_data():
 
 
 
-            post_data([fullname, phone, email, 'NurseFly', professional_license, firstname, lastname,
-                             notes_final,licenced_state,speciality_list,experience_years,full_address,state_variable,zip,SSN])
+            #post_data([fullname, phone, email, 'NurseFly', professional_license, firstname, lastname,
+             #                notes_final,licenced_state,speciality_list,experience_years,full_address,state_variable,zip,SSN])
 
 
 
